@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "296731516235",
+    "project_id": "aseel-auth",
+    "storage_bucket": "aseel-auth.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:296731516235:android:3fb70f7637635dfe44dcce",
+        "android_client_info": {
+          "package_name": "com.example.point_sys_aseel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "296731516235-kkt0l8cn24kohonkrrskif1fmtc65mag.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCl-p4G3NSR4sNgsB9MnkfTghkH4NmiBu4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "296731516235-kkt0l8cn24kohonkrrskif1fmtc65mag.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
