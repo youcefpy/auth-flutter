@@ -140,51 +140,86 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
     });
   }
 
-  void _handleGlobalCodeScanned() async {
+void _handleGlobalCodeScanned() async {
   final String userId = FirebaseAuth.instance.currentUser!.uid;
-  final DocumentSnapshot userData = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(userId)
-      .get();
+
+  final DocumentSnapshot userData = await FirebaseFirestore.instance.collection('users').doc(userId).get();
   final Map<String, dynamic> data = userData.data() as Map<String, dynamic>;
   final username = data['username'];
   final role = data['role'];
   final String workOn = data['workOn'].toString();
-  // final String currentDate = DateTime.now().toString();
+
   final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
   final String formattedDate = formatter.format(DateTime.now());
+
+  final DateFormat hourFormatter = DateFormat("HH:mm");
+  final String currentHour = hourFormatter.format(DateTime.now());
+
   final String scanInfo = 'Username: $username\nRole: $role\nDate: $formattedDate\nlieuDeTravail: $workOn';
   print('lieuDeTravail: $workOn');
-    setState(() {
+  setState(() {
     result = Barcode(scanInfo, BarcodeFormat.qrcode, [1, 1, 1, 1]);
     hasScanned = true;
   });
 
-  var url = Uri.parse('https://script.google.com/macros/s/AKfycbwjgZKgGbfH0-uCG2zPHxiSU1lxXT-O1EGCwRv69qV6hANoJTbGdrzrNV2YoD_bH7QQ0A/exec');
-  final body = {'date': formattedDate, 'employee': username, 'role': role,'lieuDeTravail': workOn, };
-  // print('Sending HTTP POST request with body: $body');
-  print('Sending HTTP POST request with body: $body');
-  var response = await http.post(
-  url, 
-  headers: <String, String>{
-    'Content-Type': 'application/json; charset=UTF-8',
-  },
-  body: jsonEncode(body),
-);
-print('Sending HTTP POST request with body: ${jsonEncode(body)}');
-  
-  // print('Body: $jsonBody');
+  DocumentSnapshot scanData = await FirebaseFirestore.instance.collection('users').doc(userId + '_' + formattedDate.split(' ')[0]).get();
 
-  if (response.statusCode == 200) {
-    print('Data sent to Google Sheets');
-    print('Response body: ${response.body}');
+  Map<String, dynamic> body;
+  var url = Uri.parse('https://script.google.com/macros/s/AKfycbyJtb1VDdecVJiFtfwruvyLqlNqXEu0fLvbyQ53t9lYpRq1EPr4AT-upcc1Zi1McRXvRQ/exec');
+
+  if (!scanData.exists) {
+    // Document does not exist, meaning this is the first scan of the day (Entry Scan)
+    await FirebaseFirestore.instance.collection('users').doc(userId + '_' + formattedDate.split(' ')[0]).set({
+      "enter_hour": currentHour,
+    });
+    body = {
+      'date': formattedDate,
+      'employee': username,
+      'role': role,
+      'lieuDeTravail': workOn,
+      'entrer': currentHour,
+      'sortie': "",
+    };
+    print('Sending HTTP POST request with body: $body');
   } else {
-    print('Error sending data to Google Sheets: ${response.statusCode}');
-    print('Response body: ${response.body}');
+    // Document exists, this is the second scan of the day (Exit Scan)
+    final Map<String, dynamic> scanDataMap = scanData.data() as Map<String, dynamic>;
+    await FirebaseFirestore.instance.collection('users').doc(userId + '_' + formattedDate.split(' ')[0]).update({
+      'exit_hour': currentHour,
+    });
+    body = {
+      'date': formattedDate,
+      'employee': username,
+      'role': role,
+      'lieuDeTravail': workOn,
+      'entrer': scanDataMap['enter_hour'], // Getting the saved entry hour
+      'sortie': currentHour // Current hour as this is the exit scan
+    };
   }
 
+  try {
+    var response = await http.post(
+      url,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+      
+    );
+    print('Sending request with body: ${jsonEncode(body)}');
+    if (response.statusCode == 200) {
+      print('Data sent to Google Sheets');
+      print('Sending body: $body');
 
- }
+    } else {
+      print('Error sending data to Google Sheets: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+  } catch (error) {
+    print('Error during HTTP request: $error');
+  }
+}
+
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     log('${DateTime.now().toIso8601String()}_onPermissionSet $p');
     if (!p) {
