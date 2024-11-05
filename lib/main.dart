@@ -8,9 +8,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
       if(Firebase.apps.isEmpty){
       FirebaseOptions firebaseOptions = FirebaseOptions(
-      apiKey: "myApiKey",
-      appId: "1:296731516235:android:3fb70f7637635dfe44dcce",
-      messagingSenderId: "296731516235",
+      apiKey: "MyApiKey",
+      appId: "MyAppID",
+      messagingSenderId: "12345",
       projectId: "aseel-auth",
     );
 
